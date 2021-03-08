@@ -1,0 +1,952 @@
+begintemplate Cell_Spec
+
+objref Somatic,Basilar,Apical,all
+public Somatic,Basilar,Apical,all
+objref base_current,main_shape,shape_vert
+public base_current,main_shape
+objref vbox[4],hbox[2],gg[3]
+public vbox,hbox
+create soma,dend[10],apic
+public soma,dend,apic,map
+external addplot,tstop
+objref this
+objref syn[3]
+
+
+proc init(){
+ndend=10
+
+
+Somatic=new SectionList()
+Basilar=new SectionList()
+Apical=new SectionList()
+all=new SectionList()
+
+soma_build()
+dend_build()
+apic_build()
+make_connections()
+
+soma{base_current=new IClamp(0.5)}
+base_current.del=10
+base_current.dur=10000
+base_current.amp=0
+
+base_current_del=base_current.del
+base_current_amp=base_current.amp
+
+build_gui()
+}
+
+proc soma_build(){
+	soma{
+		insert hh
+		Somatic.append()
+		all.append()
+	}
+	soma.L=16
+	soma.diam=16
+	soma.cm=1
+	soma.Ra=100
+	soma.ena=50
+	soma.ek=-77
+	soma.gnabar_hh = 0.12
+	soma.gkbar_hh = 0.036
+	soma.gl_hh=0.0003
+	soma.el_hh=-54.3
+
+	somatic_L=soma.L
+	somatic_diam=soma.diam
+	somatic_cm=soma.cm
+	somatic_Ra=soma.Ra
+	somatic_ena=soma.ena
+	somatic_ek=soma.ek
+	somatic_gnabar_hh = soma.gnabar_hh
+	somatic_gkbar_hh = soma.gkbar_hh
+	somatic_gl_hh=soma.gl_hh
+	somatic_el_hh=soma.el_hh
+}
+
+proc dend_build(){
+	for i=0,ndend-1{
+		dend[i].L=100
+		dend[i].diam=0.4
+		dend[i]{
+			insert pas
+			Basilar.append()
+			all.append()
+		}
+		dend[i].cm=1
+		dend[i].Ra=100
+		dend[i].e_pas=-54.3
+		dend[i].g_pas=0.0003
+	}
+	basilar_L=dend[0].L
+	basilar_diam=dend[0].diam
+	basilar_cm=dend[0].cm
+	basilar_Ra=dend[0].Ra
+	basilar_e_pas=dend[0].e_pas
+	basilar_g_pas=dend[0].g_pas
+}
+
+proc apic_build(){
+	apic.L=300
+	apic.nseg=50
+	apic.diam=1
+	apic{
+		insert pas
+		Apical.append()
+		all.append()
+	}
+	apic.cm=1
+	apic.Ra=100
+	apic.e_pas=-54.3
+	apic.g_pas=0.0003
+
+	apical_L=apic.L
+	apical_diam=apic.diam
+	apical_cm=apic.cm
+	apical_Ra=apic.Ra
+	apical_e_pas=apic.e_pas
+	apical_g_pas=apic.g_pas
+	apic{ syn[0]=new ExpSyn(0)}
+	apic{ syn[1]=new ExpSyn(0.5)}
+	apic{ syn[2]=new ExpSyn(1)}
+}
+
+
+
+proc make_connections(){
+	connect apic(0),soma(1)
+	for i=0,ndend-1{
+		connect dend[i](1),soma(0)
+	}
+}
+
+proc build_gui(){
+	vbox[0]=new VBox()
+	vbox[0].intercept(1)
+		xpanel(" ")
+			xlabel("Apical")
+			xvalue("  Length  (um)","apical_L",1,"apical_Length_changed()",1,1)
+			xvalue("  Diameter  (um)","apical_diam",1,"apical_Diameter_changed()",1,1)
+			xvalue("  Cm  (uF/cm2)","apical_cm",1,"apical_Cm_changed()",1,1)
+			xvalue("  Ra  (ohm-cm)","apical_Ra",1,"apical_Ra_changed()",1,1)
+			xvalue("  E_Passive  (mV)","apical_e_pas",1,"apical_E_Passive_changed()",1,1)
+			xvalue("  g_Passive  (S/cm2)","apical_g_pas",1,"apical_g_Passive_changed()",1,1)
+		xpanel()
+		xpanel(" ")
+			xlabel("Basilar")
+			xvalue("  Length  (um)","basilar_L",1,"basilar_Length_changed()",1,1)
+			xvalue("  Diameter  (um)","basilar_diam",1,"basilar_Diameter_changed()",1,1)
+			xvalue("  Cm  (uF/cm2)","basilar_cm",1,"basilar_Cm_changed()",1,1)
+			xvalue("  Ra  (ohm-cm)","basilar_Ra",1,"basilar_Ra_changed()",1,1)
+			xvalue("  E_Passive  (mV)","basilar_e_pas",1,"basilar_E_Passive_changed()",1,1)
+			xvalue("  g_Passive  (S/cm2)","basilar_g_pas",1,"basilar_g_Passive_changed()",1,1)
+		xpanel()
+	vbox[0].intercept(0)
+
+	vbox[1]=new VBox()
+	vbox[1].intercept(1)
+		xpanel(" ")
+			xlabel("Soma")
+			xvalue("  Length  ","somatic_L",1,"somatic_Length_changed()",1,1)
+			xvalue("  Diameter  ","somatic_diam",1,"somatic_Diameter_changed()",1,1)
+			xvalue("  Cm  ","somatic_cm",1,"somatic_Cm_changed()",1,1)
+			xvalue("  Ra  ","somatic_Ra",1,"somatic_Ra_changed()",1,1)
+			xvalue("  E_Na  ","somatic_ena",1,"somatic_E_Na_changed()",1,1)
+			xvalue("  E_K  ","somatic_ek",1,"somatic_E_K_changed()",1,1)
+			xvalue("  E_Passive  ","somatic_el_hh",1,"somatic_E_Passive_changed()",1,1)
+			xvalue("  g_Na  ","somatic_gnabar_hh",1,"somatic_g_Na_changed()",1,1)
+			xvalue("  g_K  ","somatic_gkbar_hh",1,"somatic_g_K_changed()",1,1)
+			xvalue("  g_Passive  ","somatic_gl_hh",1,"somatic_g_Passive_changed()",1,1)
+		xpanel()
+		xpanel(" ")
+			xlabel("Base Current")
+			xvalue("  Amplitude (nA)","base_current.amp",1," ",1,1)
+			xvalue("  Delay (ms)","base_current.del",1," ",1,1)
+		xpanel()
+	vbox[1].intercept(0)
+
+	hbox[0]=new HBox()
+	hbox[0].intercept(1)
+		vbox[0].map()
+		vbox[1].map()
+	hbox[0].intercept(0)
+
+	vbox[2]=new VBox()
+	vbox[2].intercept(1)
+		shape_vert=new VBox()
+		shape_vert.intercept(1)
+			main_shape=new Shape()
+		shape_vert.intercept(0)
+		shape_vert.map(" ",0,0,50,300)
+		main_shape.observe(all)
+		main_shape.color_list(Basilar,6)
+		main_shape.color_list(Somatic,1)
+		main_shape.color_list(Apical,7)
+		main_shape.point_mark(syn[0], 2)
+		main_shape.point_mark(syn[1], 3)
+		main_shape.point_mark(syn[2], 4)
+		main_shape.show(0)
+	main_shape.label(0.1,0.95,"Basilar",2,1,0,0,6)
+	main_shape.label(0.1,0.9,"Soma",2,1,0,0,1)
+	main_shape.label(0.1,0.85,"Apical",2,1,0,0,7)
+		hbox[0].map()
+	vbox[2].intercept(0)
+	
+
+	vbox[3]=new VBox()
+	vbox[3].intercept(1)
+		g_0()
+		g_1()
+		g_2()
+	vbox[3].intercept(0)
+	
+	
+	hbox[1]=new HBox()
+	hbox[1].intercept(1)
+		vbox[2].map()
+		vbox[3].map()
+	hbox[1].intercept(0)	
+}
+
+
+
+proc g_0(){
+	gg[0]=new Graph()
+	gg[0].menu_remove("Delete")
+	gg[0].menu_remove("Change Text")
+	gg[0].menu_remove("Move Text")
+	gg[0].menu_remove("Erase")
+	gg[0].menu_remove("Family Label?")
+	gg[0].menu_remove("Keep Lines")
+	gg[0].menu_remove("Erase Axis")
+	gg[0].menu_remove("Axis Type")
+	gg[0].menu_remove("Color/Brush")
+	gg[0].menu_remove("Pick Vector")
+	gg[0].menu_remove("Plot what?")
+	gg[0].addvar(" ","apic.v(0)",2,1)
+	gg[0].addvar(" ","apic.v(0.5)",3,1)
+	gg[0].addvar(" ","apic.v(1)",4,1)
+	addplot(gg[0],1)
+	gg[0].label(0.1,0.95,"Apical (0) (mV)",2,1,0,0,2)
+	gg[0].label(0.1,0.9,"Apical (.5) (mV)",2,1,0,0,3)
+	gg[0].label(0.1,0.85,"Apical (1) (mV)",2,1,0,0,4)
+	gg[0].exec_menu("View = plot")
+	gg[0].size(0,tstop,-70,20)
+}
+
+
+proc g_1(){
+	gg[1]=new Graph()
+	gg[1].menu_remove("Delete")
+	gg[1].menu_remove("Change Text")
+	gg[1].menu_remove("Move Text")
+	gg[1].menu_remove("Erase")
+	gg[1].menu_remove("Family Label?")
+	gg[1].menu_remove("Keep Lines")
+	gg[1].menu_remove("Erase Axis")
+	gg[1].menu_remove("Axis Type")
+	gg[1].menu_remove("Color/Brush")
+	gg[1].menu_remove("Pick Vector")
+	gg[1].menu_remove("Plot what?")
+	gg[1].addvar(" ","soma.ina(0.5)",2,1)
+	gg[1].addvar(" ","soma.ik(0.5)",3,1)
+	gg[1].addvar(" ","soma.il_hh(0.5)",4,1)
+	gg[1].label(0.1,0.95,"Somatic i_Na (nA)",2,1,0,0,2)
+	gg[1].label(0.1,0.9,"Somatic i_K (nA)",2,1,0,0,3)
+	gg[1].label(0.1,0.85,"Somatic i_leak (nA)",2,1,0,0,4)
+	gg[1].exec_menu("View = plot")
+	addplot(gg[1],1)
+	gg[1].size(0,tstop,-1,1)
+}
+
+
+proc g_2(){
+	gg[2]=new Graph()
+	gg[2].menu_remove("Delete")
+	gg[2].menu_remove("Change Text")
+	gg[2].menu_remove("Move Text")
+	gg[2].menu_remove("Erase")
+	gg[2].menu_remove("Family Label?")
+	gg[2].menu_remove("Keep Lines")
+	gg[2].menu_remove("Erase Axis")
+	gg[2].menu_remove("Axis Type")
+	gg[2].menu_remove("Color/Brush")
+	gg[2].menu_remove("Pick Vector")
+	gg[2].menu_remove("Plot what?")
+	gg[2].addvar(" ","soma.m_hh(0.5)",2,1)
+	gg[2].addvar(" ","soma.n_hh(0.5)",3,1)
+	gg[2].addvar(" ","soma.h_hh(0.5)",4,1)
+	gg[2].label(0.1,0.95,"Somatic m",2,1,0,0,2)
+	gg[2].label(0.1,0.9,"Somatic n",2,1,0,0,3)
+	gg[2].label(0.1,0.85,"Somatic h",2,1,0,0,4)
+	gg[2].exec_menu("View = plot")
+	addplot(gg[2],1)
+	gg[2].size(0,tstop,0,1)
+}
+
+proc basilar_Length_changed(){
+	if (basilar_L>0){
+		forsec Basilar{
+			L=basilar_L
+		}
+	}else{
+		basilar_L=0.1
+		forsec Basilar{
+			L=basilar_L
+		}	
+	}
+	update_shape()
+}
+
+
+proc basilar_Diameter_changed(){
+	if (basilar_diam>0){
+		forsec Basilar{
+			diam=basilar_diam
+		}
+	}else{
+		basilar_diam=0.1
+		forsec Basilar{
+			diam=basilar_diam
+		}	
+	}
+	update_shape()
+}
+
+proc basilar_Cm_changed(){
+	if (basilar_cm>0){
+		forsec Basilar{
+			cm=basilar_cm
+		}
+	}else{
+		basilar_cm=0.1
+		forsec Basilar{
+			cm=basilar_cm
+		}	
+	}
+	update_shape()
+}
+
+
+proc basilar_Ra_changed(){
+	if (basilar_Ra>0){
+		forsec Basilar{
+			Ra=basilar_Ra
+		}
+	}else{
+		basilar_Ra=0.1
+		forsec Basilar{
+			Ra=basilar_Ra
+		}	
+	}
+	update_shape()
+}
+
+proc basilar_E_Passive_changed(){
+	forsec Basilar{
+		e_pas=basilar_e_pas
+	}
+	update_shape()
+}
+
+proc basilar_g_Passive_changed(){
+	if (basilar_g_pas>=0){
+		forsec Basilar{
+			g_pas=basilar_g_pas
+		}
+	}else{
+		basilar_g_pas=0
+		forsec Basilar{
+			g_pas=basilar_g_pas
+		}	
+	}
+	update_shape()
+}
+
+proc apical_Length_changed(){
+	if (apical_L>0){
+		forsec Apical{
+			L=apical_L
+		}
+	}else{
+		apical_L=0.1
+		forsec Apical{
+			L=apical_L
+		}	
+	}
+	update_shape()
+}
+
+
+proc apical_Diameter_changed(){
+	if (apical_diam>0){
+		forsec Apical{
+			diam=apical_diam
+		}
+	}else{
+		apical_diam=0.1
+		forsec Apical{
+			diam=apical_diam
+		}	
+	}
+	update_shape()
+}
+
+proc apical_Cm_changed(){
+	if (apical_cm>0){
+		forsec Apical{
+			cm=apical_cm
+		}
+	}else{
+		apical_cm=0.1
+		forsec Apical{
+			cm=apical_cm
+		}	
+	}
+	update_shape()
+}
+
+
+proc apical_Ra_changed(){
+	if (apical_Ra>0){
+		forsec Apical{
+			Ra=apical_Ra
+		}
+	}else{
+		apical_Ra=0.1
+		forsec Apical{
+			Ra=apical_Ra
+		}	
+	}
+	update_shape()
+}
+
+proc apical_E_Passive_changed(){
+	forsec Apical{
+		e_pas=apical_e_pas
+	}
+	update_shape()
+}
+
+proc apical_g_Passive_changed(){
+	if (apical_g_pas>=0){
+		forsec Apical{
+			g_pas=apical_g_pas
+		}
+	}else{
+		apical_g_pas=0
+		forsec Apical{
+			g_pas=apical_g_pas
+		}	
+	}
+	update_shape()
+}
+
+
+/**************************************/
+proc somatic_Length_changed(){
+	if (somatic_L>0){
+		forsec Somatic{
+			L=somatic_L
+		}
+	}else{
+		somatic_L=0.1
+		forsec Somatic{
+			L=somatic_L
+		}	
+	}
+	update_shape()
+}
+
+
+proc somatic_Diameter_changed(){
+	if (somatic_diam>0){
+		forsec Somatic{
+			diam=somatic_diam
+		}
+	}else{
+		somatic_diam=0.1
+		forsec Somatic{
+			diam=somatic_diam
+		}	
+	}
+	update_shape()
+}
+
+proc somatic_Cm_changed(){
+	if (somatic_cm>0){
+		forsec Somatic{
+			cm=somatic_cm
+		}
+	}else{
+		somatic_cm=0.1
+		forsec Somatic{
+			cm=somatic_cm
+		}	
+	}
+	update_shape()
+}
+
+
+proc somatic_Ra_changed(){
+	if (somatic_Ra>0){
+		forsec Somatic{
+			Ra=somatic_Ra
+		}
+	}else{
+		somatic_Ra=0.1
+		forsec Somatic{
+			Ra=somatic_Ra
+		}	
+	}
+	update_shape()
+}
+
+proc somatic_E_Passive_changed(){
+	forsec Somatic{
+		el_hh=somatic_el_hh
+	}
+	update_shape()
+}
+
+proc somatic_g_Passive_changed(){
+	if (somatic_gl_hh>=0){
+		forsec Somatic{
+			gl_hh=somatic_gl_hh
+		}
+	}else{
+		somatic_gl_hh=0
+		forsec Somatic{
+			gl_hh=somatic_gl_hh
+		}	
+	}
+	update_shape()
+}
+
+
+proc somatic_E_K_changed(){
+	forsec Somatic{
+		ek=somatic_ek
+	}
+	update_shape()
+}
+
+proc somatic_g_K_changed(){
+	if (somatic_gkbar_hh>=0){
+		forsec Somatic{
+			gkbar_hh=somatic_gkbar_hh
+		}
+	}else{
+		somatic_gkbar_hh=0
+		forsec Somatic{
+			gkbar_hh=somatic_gkbar_hh
+		}	
+	}
+	update_shape()
+}
+
+proc somatic_E_Na_changed(){
+	forsec Somatic{
+		ena=somatic_ena
+	}
+	update_shape()
+}
+
+proc somatic_g_Na_changed(){
+	if (somatic_gnabar_hh>=0){
+		forsec Somatic{
+			gnabar_hh=somatic_gnabar_hh
+		}
+	}else{
+		somatic_gnabar_hh=0
+		forsec Somatic{
+			gnabar_hh=somatic_gnabar_hh
+		}	
+	}
+	update_shape()
+}
+
+
+proc update_shape(){
+ main_shape.exec_menu("View = plot")
+}
+
+proc map(){
+hbox[1].map(" ",0,0,850,540)
+}
+
+endtemplate Cell_Spec
+/*******************************************************************************/
+begintemplate Single_Syn_Spec
+strdef ind_temp
+objref cell_spec,syn,fakesyn,netstim,netcon,spike
+public spike
+public build_panel,set_start,set_Interval,set_noise,set_e,set_Tau,set_weight
+public get_start,get_Interval,get_noise,get_e,get_Tau,get_weight
+proc init(){
+	cell_spec = $o1
+	ind=$2
+	sprint(ind_temp,"%d",ind)
+	start=10
+	interval=5
+	noise=1
+	e=0
+	tau=1
+	weight=0
+	
+	netstim=new NetStim()
+	netstim.start=start
+	netstim.interval=interval
+	netstim.number=10000
+	netstim.noise=noise
+	
+	cell_spec.dend[ind]{syn = new  ExpSyn(0)}
+	syn.e=e
+	syn.tau=tau
+	cell_spec.main_shape.point_mark(syn, 9)
+	netcon=new NetCon(netstim,syn)
+	netcon.weight[0]=weight
+	netcon.delay=0
+	spike=new Vector()
+	netcon.record(spike)
+}
+
+proc build_panel(){
+xpanel(" ",1)
+	xlabel(ind_temp)
+	xvalue("  Interval  ","interval",1,"Interval_changed()",1,1)
+	xvalue("  Tau  ","tau",1,"Tau_changed()",1,1)
+	xvalue("  e  ","e",1,"e_changed()",1,1)
+	xvalue("  weight  ","weight",1,"weight_changed()",1,1)
+xpanel()
+}
+
+proc Interval_changed(){
+	if (interval>0){
+		netstim.interval=interval
+	}else{
+		interval=0.1
+		netstim.interval=interval
+	}
+}
+
+proc Tau_changed(){
+	if (tau>0){
+		syn.tau=tau
+	}else{
+		tau=0.1
+		syn.tau=tau
+	}
+}
+
+proc e_changed(){
+	syn.e=e
+}
+
+proc weight_changed(){
+	if (weight>=0){
+		netcon.weight[0]=weight
+	}else{
+		weight=0
+		netcon.weight[0]=weight
+	}
+}
+
+
+proc start_changed(){
+	if (start>=0){
+		netstim.start=start
+	}else{
+		start=0
+		netstim.start=start
+	}
+}
+
+
+proc noise_changed(){
+	if (noise>=0){
+		netstim.noise=noise
+	}else{
+		noise=0
+		netstim.noise=noise
+	}
+}
+
+proc set_Interval(){
+	interval=$1
+	Interval_changed()
+}
+
+proc set_Tau(){
+	tau=$1
+	Tau_changed()
+}
+
+proc set_e(){
+	e=$1
+	e_changed()
+}
+
+proc set_weight(){
+	weight=$1
+	weight_changed()
+}
+
+proc set_start(){
+	start=$1
+	start_changed()
+}
+
+proc set_noise(){
+	noise=$1
+	noise_changed()
+}
+
+func get_Interval(){
+	return interval
+}
+
+func get_Tau(){
+	return tau
+}
+
+func get_e(){
+	return e
+}
+
+func get_weight(){
+	return weight
+}
+
+func get_start(){
+	return start
+}
+
+func get_noise(){
+	return noise
+}
+
+
+endtemplate Single_Syn_Spec
+
+/*******************************************************************************/
+begintemplate Syn_Spec
+objref cell_spec,single[10],vbox,raster,hbox
+public raster_plot,run_prog
+external tstop,addplot,run
+
+proc init(){
+	cell_spec=$o1
+	start=10
+	interval=5
+	noise=1
+	e=0
+	tau=1
+	weight=0
+	guide()
+	merge()
+}
+
+proc build_panel(){
+xpanel(" ",1)
+	xlabel("All")
+xpanel()
+xpanel(" ",1)
+	xlabel(" ")
+	xvalue("  Interval  ","interval",1,"Interval_changed()",1,1)
+	xvalue("  Tau  ","tau",1,"Tau_changed()",1,1)
+	xvalue("  e  ","e",1,"e_changed()",1,1)
+	xvalue("  weight  ","weight",1,"weight_changed()",1,1)
+xpanel()
+xpanel(" ",1)
+	xlabel(" ")
+	xvalue("  start  ","start",1,"start_changed()",1,1)
+	xvalue("  noise  ","noise",1,"noise_changed()",1,1)
+xpanel()
+
+}
+
+proc guide(){
+	vbox=new VBox()
+	vbox.intercept(1)
+	raster=new Graph()
+	addplot(raster,1)
+	raster.size(0,tstop,-2,10)
+	raster.exec_menu("View Box")
+	xpanel(" ",1)
+		xlabel("Connections")
+	xpanel()
+	for i=0,9{
+		single[i]=new Single_Syn_Spec(cell_spec,i)
+		single[i].build_panel()
+	}
+	build_panel()
+	vbox.intercept(0)
+	
+}
+
+proc merge(){
+hbox=new HBox()
+hbox.intercept(1)
+vbox.map()
+cell_spec.map()
+hbox.intercept(0)
+hbox.map()
+
+}
+
+
+proc raster_plot(){
+	raster.erase_all()
+	for i=0,9{
+		for j=0,single[i].spike.size()-1{
+			raster.mark(single[i].spike.x[j],i, "|", 4,1,2)
+
+		}
+
+	}
+}
+
+proc Interval_changed(){
+	for i=0,9{
+		single[i].set_Interval(interval)
+	}
+	interval=single[0].get_Interval()
+}
+
+proc Tau_changed(){
+	for i=0,9{
+		single[i].set_Tau(tau)
+	}
+	tau=single[0].get_Tau()
+}
+
+proc e_changed(){
+	for i=0,9{
+		single[i].set_e(e)
+	}
+	e=single[0].get_e()
+}
+
+proc weight_changed(){
+	for i=0,9{
+		single[i].set_weight(weight)
+	}
+	weight=single[0].get_weight()
+}
+
+proc start_changed(){
+	for i=0,9{
+		single[i].set_start(start)
+	}
+	start=single[0].get_start()
+}
+
+proc noise_changed(){
+	if (noise<=0){
+		noise=0
+	}else if (noise>=2){
+		noise=1
+	}
+	
+	for i=0,9{
+		single[i].set_noise(noise)
+	}
+	noise=single[0].get_noise()
+}
+
+
+
+
+
+endtemplate Syn_Spec
+
+begintemplate Main
+objref cell_spec,syn_spec,vbox
+external tstop,tstop_changed,run,v_init
+
+proc init(){
+cell_spec=new Cell_Spec()
+
+vbox=new VBox()
+vbox.intercept(1)
+run_panel()
+syn_spec=new Syn_Spec(cell_spec)
+vbox.intercept(0)
+vbox.map()
+tstop=100
+tstop_changed()
+v_init=-65
+}
+
+proc run_panel(){
+xpanel(" ",1)
+	xlabel(" ")
+	xbutton("  Run Simulation  ","run_prog()")
+	xbutton("  Stop Simulation  ","stoprun=1")
+	xvalue("  tstop  ","tstop",0,"tstop_changed()",0,0)
+	xvalue("  v_init  ","v_init",0," ",0,0)
+	xvalue("  celsius  ","celsius",0," ",0,0)
+	xvalue("  t  ","t",0," ",0,0)
+xpanel()
+}
+
+proc run_prog(){
+	run()
+	syn_spec.raster_plot()
+}
+
+endtemplate Main
+
+
+
+objref obj1,obj2[10],main
+
+main=new Main()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+load_file("procedures.hoc")
+
+
+
+Stim_Graph=new Graph()
+Stim_Graph.addvar(" ","base_current.i",7,3)
+Stim_Graph.label(0.8,0.80,"Stimulus",2,1,0,0,7)
+addplot(Stim_Graph,1)
+Stim_Graph.size(0,tstop,-1,2)
+
+
+Membrane_Graph=new Graph()
+Membrane_Graph.addvar(" ","soma.v(0.5)",7,3)
+Membrane_Graph.label(0.8,0.80,"Stimulus",2,1,0,0,7)
+addplot(Membrane_Graph,1)
+Membrane_Graph.size(0,tstop,-1,2)
+
+
+run()
+*/
